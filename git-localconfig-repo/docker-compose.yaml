@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  currency-exchange:
+    image: karaththai/currency-exchange-service:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports: 
+      - "8000:8000"
+    networks: 
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://zipkin-server:9411/api/v2/spans
+      
+  currency-exchange1:
+    image: karaththai/currency-exchange-service:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports: 
+      - "8001:8001"
+    networks: 
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://zipkin-server:9411/api/v2/spans
+      SERVER.PORT: 8001
+  
+  currency-conversion:
+    image: karaththai/currency-conversion-service:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports: 
+      - "8100:8100"
+    networks: 
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://zipkin-server:9411/api/v2/spans
+      HOSTNAME: http://currency-exchange:8000
+
+  api-gateway:
+    image: karaththai/api-gateway:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports: 
+      - "8765:8765"
+    networks: 
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://zipkin-server:9411/api/v2/spans
+
+  zipkin-server:
+    image: openzipkin/zipkin:latest
+    mem_limit: 300m
+    ports:
+      - "9411:9411"
+    networks:
+      - currency-network
+    restart: always #Restart if there is a problem starting up
+
+  naming-server:
+    image: karaththai/naming-server:0.0.1-SNAPSHOT
+    mem_limit: 700m
+    ports: 
+      - "8761:8761"
+    networks: 
+      - currency-network
+
+networks: 
+  currency-network:
